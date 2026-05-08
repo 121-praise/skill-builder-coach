@@ -14,7 +14,164 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      interview_sessions: {
+        Row: {
+          country: string
+          created_at: string
+          difficulty: string
+          feedback: string | null
+          id: string
+          messages: Json
+          role: string
+          score: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          country?: string
+          created_at?: string
+          difficulty?: string
+          feedback?: string | null
+          id?: string
+          messages?: Json
+          role: string
+          score?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          difficulty?: string
+          feedback?: string | null
+          id?: string
+          messages?: Json
+          role?: string
+          score?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount_kobo: number
+          created_at: string
+          currency: string
+          email: string
+          id: string
+          provider: string
+          raw: Json | null
+          reference: string
+          resume_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_kobo?: number
+          created_at?: string
+          currency?: string
+          email: string
+          id?: string
+          provider: string
+          raw?: Json | null
+          reference: string
+          resume_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_kobo?: number
+          created_at?: string
+          currency?: string
+          email?: string
+          id?: string
+          provider?: string
+          raw?: Json | null
+          reference?: string
+          resume_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          country: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      resumes: {
+        Row: {
+          ats_score: number | null
+          country: string
+          created_at: string
+          data: Json
+          id: string
+          paid: boolean
+          target_role: string | null
+          template: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ats_score?: number | null
+          country?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          paid?: boolean
+          target_role?: string | null
+          template?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ats_score?: number | null
+          country?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          paid?: boolean
+          target_role?: string | null
+          template?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
