@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as InterviewRouteImport } from './routes/interview'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BuilderIdRouteImport } from './routes/builder.$id'
@@ -23,6 +24,11 @@ const SignupRoute = SignupRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InterviewRoute = InterviewRouteImport.update({
+  id: '/interview',
+  path: '/interview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -44,6 +50,7 @@ const BuilderIdRoute = BuilderIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/interview': typeof InterviewRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/builder/$id': typeof BuilderIdRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/interview': typeof InterviewRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/builder/$id': typeof BuilderIdRoute
@@ -59,21 +67,36 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/interview': typeof InterviewRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/builder/$id': typeof BuilderIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login' | '/signup' | '/builder/$id'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/interview'
+    | '/login'
+    | '/signup'
+    | '/builder/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/signup' | '/builder/$id'
-  id: '__root__' | '/' | '/dashboard' | '/login' | '/signup' | '/builder/$id'
+  to: '/' | '/dashboard' | '/interview' | '/login' | '/signup' | '/builder/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/interview'
+    | '/login'
+    | '/signup'
+    | '/builder/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  InterviewRoute: typeof InterviewRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   BuilderIdRoute: typeof BuilderIdRoute
@@ -93,6 +116,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interview': {
+      id: '/interview'
+      path: '/interview'
+      fullPath: '/interview'
+      preLoaderRoute: typeof InterviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -122,6 +152,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  InterviewRoute: InterviewRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   BuilderIdRoute: BuilderIdRoute,
