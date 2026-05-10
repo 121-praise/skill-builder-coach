@@ -5,79 +5,75 @@ const cors = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+
   try {
-    const { mode, payload } = await req.json();
-    const KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!KEY) return j({ error: "Missing LOVABLE_API_KEY" }, 500);
+    const { messages, resumeData, action } = await req.json();
 
-    let messages: any[] = [];
-    let tools: any[] | undefined; let tool_choice: any | undefined;
-
-    if (mode === "rewrite_summary") {
-      const { what_i_do, target_role, country } = payload;
-      messages = [
-        { role: "system", content: `You are a senior career coach. Write resume summaries tailored to the ${country} job market. Keep it 2-3 sentences, confident, results-focused, no fluff.` },
-        { role: "user", content: `Target role: ${target_role}\nWhat I do: ${what_i_do}\n\nWrite a polished professional summary in first person without using "I".` },
-      ];
-    } else if (mode === "rewrite_bullets") {
-      const { raw, role, target_role, country } = payload;
-      messages = [
-        { role: "system", content: `Rewrite job duties into 3-5 strong, ATS-friendly resume bullets for the ${country} market. Use action verbs + measurable impact. Tailor to: ${target_role}.` },
-        { role: "user", content: `Role: ${role}\nWhat they did: ${raw}\n\nReturn only bullets, one per line, no leading dashes.` },
-      ];
-    } else if (mode === "suggest_skills") {
-      const { target_role, experience, country } = payload;
-      messages = [
-        { role: "system", content: `Suggest 8-12 in-demand skills for a ${target_role} in ${country}. Return a comma-separated list. No descriptions.` },
-        { role: "user", content: `Background: ${experience}` },
-      ];
-    } else if (mode === "score") {
-      const { resume, target_role, country } = payload;
-      messages = [
-        { role: "system", content: `You are an ATS expert. Score resumes 0-100 for ${country} markets and target role.` },
-        { role: "user", content: `Target: ${target_role} in ${country}\n\nResume JSON:\n${JSON.stringify(resume).slice(0, 8000)}\n\nGive an ATS score and 4-6 specific improvement tips.` },
-      ];
-      tools = [{
-        type: "function",
-        function: {
-          name: "ats_report",
-          parameters: {
-            type: "object",
-            properties: {
-              score: { type: "integer", minimum: 0, maximum: 100 },
-              strengths: { type: "array", items: { type: "string" } },
-              improvements: { type: "array", items: { type: "string" } },
-            },
-            required: ["score", "strengths", "improvements"],
-          },
-        },
-      }];
-      tool_choice = { type: "function", function: { name: "ats_report" } };
-    } else {
-      return j({ error: "Unknown mode" }, 400);
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: "Missing ANTHROPIC_API_KEY" }),
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
+      );
     }
 
-    const body: any = { model: "google/gemini-2.5-flash", messages };
-    if (tools) { body.tools = tools; body.tool_choice = tool_choice; }
+    const systemPrompt = `You are an expert resume writer and career coach. Help users improve their resumes by:
+- Suggesting stronger action verbs and impactful phrasing
+- Improving clarity and conciseness
+- Tailoring content for specific roles
+- Improving ATS (Applicant Tracking System) compatibility
+- Highlighting key achievements and skills
 
-    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+Be specific, practical, and constructive in your feedback. Keep responses concise and actionable.`;
+
+    // Convert messages to Anthropic format
+    const anthropicMessages = (messages || []).filter((m: any) => m.role !== "system");
+
+    // If resume data is provided, include it as context
+    if (resumeData && anthropicMessages.length > 0) {
+      const lastMessage = anthropicMessages[anthropicMessages.length - 1];
+      anthropicMessages[anthropicMessages.length - 1] = {
+        ...lastMessage,
+        content: `Resume data:\n${JSON.stringify(resumeData, null, 2)}\n\nUser request: ${lastMessage.content}`,
+      };
+    }
+
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: anthropicMessages.length > 0 ? anthropicMessages : [
+          { role: "user", content: "Hello, I need help with my resume." }
+        ],
+      }),
     });
-    if (r.status === 429) return j({ error: "Rate limit — try again in a moment." }, 429);
-    if (r.status === 402) return j({ error: "AI credits exhausted. Top up in Settings → Workspace → Usage." }, 402);
-    if (!r.ok) return j({ error: `AI error ${r.status}` }, 500);
-    const data = await r.json();
-    const choice = data.choices?.[0];
-    if (tools) {
-      const args = choice?.message?.tool_calls?.[0]?.function?.arguments;
-      return j(args ? JSON.parse(args) : { error: "no tool result" });
+
+    if (r.status === 429) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit reached. Please try again shortly." }),
+        { status: 429, headers: { ...cors, "Content-Type": "application/json" } }
+      );
     }
-    return j({ text: choice?.message?.content ?? "" });
+
+    const data = await r.json();
+    const text = data.content?.[0]?.text ?? "";
+
+    return new Response(
+      JSON.stringify({ text }),
+      { headers: { ...cors, "Content-Type": "application/json" } }
+    );
+
   } catch (e) {
-    return j({ error: e instanceof Error ? e.message : "unknown" }, 500);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "unknown error" }),
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
+    );
   }
 });
-
-function j(b: unknown, s = 200) { return new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } }); }
