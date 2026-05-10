@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${LOVABLE}`,
         "X-Connection-Api-Key": RESEND,
       },
-      body: JSON.stringify({ from: "Reslyn <onboarding@resend.dev>", to: [to], subject, html }),
+      body: JSON.stringify({ from: "TalentAI <onboarding@resend.dev>", to: [to], subject, html }),
     });
     const data = await r.json();
     return j({ ok: r.ok, data });
