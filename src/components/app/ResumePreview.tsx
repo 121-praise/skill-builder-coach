@@ -56,7 +56,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, { data: ResumeData; coun
           <p className="text-sm">{data.skills.join(" · ")}</p>
         </section>
       )}
-      <p className="text-[10px] text-neutral-400 mt-8 text-right">Optimized for {country} — built with Reslyn</p>
+      <p className="text-[10px] text-neutral-400 mt-8 text-right">Optimized for {country} — built with TalentAI</p>
     </div>
   );
 });

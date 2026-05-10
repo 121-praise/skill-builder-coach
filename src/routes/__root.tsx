@@ -74,10 +74,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Reslyn — AI Resume & Interview Coach" },
+      { title: "TalentAI — AI Resume & Interview Coach" },
       { name: "description", content: "Build ATS-ready resumes for Nigeria, UK, US & Canada. Score them with AI, practice mock interviews, and land the job." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Reslyn — AI Resume & Interview Coach" },
+      { property: "og:title", content: "TalentAI — AI Resume & Interview Coach" },
       { property: "og:description", content: "AI-powered resumes, ATS scoring, and mock interviews tailored to Nigeria, UK, US & Canada." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -94,7 +94,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@400;500;600;700&display=swap",
       },
-      { rel: "preload", as: "script", href: "https://js.paystack.co/v2/inline.js" },
+      { rel: "preload", as: "script", href: "https://checkout.flutterwave.com/v3.js" },
     ],
   }),
   shellComponent: RootShell,
@@ -124,7 +124,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Outlet />
-        <Toaster theme="dark" position="top-center" richColors />
+        <Toaster theme="light" position="top-center" richColors />
       </AuthProvider>
     </QueryClientProvider>
   );

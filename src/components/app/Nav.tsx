@@ -10,10 +10,10 @@ export function Nav() {
     <header className="sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-border">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--gradient-primary)" }}>
-            <Sparkles className="w-4 h-4 text-primary-foreground" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-foreground">
+            <Sparkles className="w-4 h-4 text-background" />
           </div>
-          <span className="font-serif text-2xl tracking-tight">Reslyn</span>
+          <span className="font-serif text-2xl tracking-tight">TalentAI</span>
         </Link>
         <nav className="flex items-center gap-2 sm:gap-4">
           {user ? (
