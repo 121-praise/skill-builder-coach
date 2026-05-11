@@ -7,93 +7,103 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   try {
-    const { messages, role, country, difficulty, end } = await req.json();
+    const { messages = [], role, country, difficulty, end } = await req.json();
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "Missing ANTHROPIC_API_KEY" }),
-        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
-      );
-    }
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY is not configured");
 
-    // Convert messages to Anthropic format (remove 'system' role from messages array)
-    const anthropicMessages = (messages || []).filter((m: any) => m.role !== "system");
+    if (!role) throw new Error("Role is required");
 
-    if (end) {
-      // Evaluate the interview and return score + feedback
-      const transcript = (messages || [])
+    // === END INTERVIEW & EVALUATE ===
+    if (end === true) {
+      const transcript = messages
         .map((m: any) => `${m.role}: ${m.content}`)
-        .join("\n");
+        .join("\n\n");
 
-      const evalPrompt = `You are an expert interview evaluator. Score this candidate 0-100 for a ${role} role in ${country}. Be fair and constructive.
+      const evalPrompt = `You are a strict but fair technical interviewer.
 
-Transcript:
+Candidate is interviewing for: ${role} in ${country || "Nigeria"}.
+Difficulty: ${difficulty || "medium"}.
+
+Full interview transcript:
 ${transcript}
 
-Respond with ONLY a JSON object in this exact format (no markdown, no extra text):
-{"score": <integer 0-100>, "feedback": "<constructive feedback string>"}`;
+Evaluate the candidate and return **ONLY** valid JSON in this exact format (no extra text):
 
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
+{
+  "score": 85,
+  "feedback": "Detailed feedback covering technical knowledge, communication, strengths, weaknesses, and improvement suggestions."
+}`;
+
+      const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
-          "x-api-key": ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: evalPrompt }],
+          model: "llama-3.3-70b-versatile",
+          temperature: 0.7,
+          max_tokens: 1200,
+          messages: [
+            { role: "system", content: "You are an expert interview evaluator." },
+            { role: "user", content: evalPrompt }
+          ],
         }),
       });
 
       const data = await r.json();
-      const text = data.content?.[0]?.text ?? '{"score":0,"feedback":""}';
+      let text = data.choices?.[0]?.message?.content?.trim() || '{"score":0,"feedback":"Evaluation failed"}';
+
+      // Extract JSON safely
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) text = jsonMatch[0];
 
       return new Response(text, {
         headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
-    // Continue the interview conversation
-    const systemPrompt = `You are a friendly but rigorous interviewer for a ${role} position in ${country}. Difficulty: ${difficulty}. Ask one focused question at a time. After the candidate answers, give a brief reaction (1 sentence) and ask the next question. Cover both behavioral and role-specific questions. Keep responses concise.`;
+    // === CONTINUE INTERVIEW ===
+    const systemPrompt = `You are a professional, friendly but rigorous interviewer for a ${role} position in ${country || "Nigeria"}.
+Difficulty level: ${difficulty || "medium"}.
 
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
+Rules:
+- Ask only ONE question at a time.
+- After the candidate answers, give a short 1-sentence reaction, then ask the next question.
+- Mix behavioral and technical questions.
+- Keep responses concise (maximum 3-4 sentences).
+- Do not give answers or be too easy.`;
+
+    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.8,
         max_tokens: 1000,
-        system: systemPrompt,
-        messages: anthropicMessages.length > 0 ? anthropicMessages : [
-          { role: "user", content: "Please start the interview." }
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages
         ],
       }),
     });
 
-    if (r.status === 429) {
-      return new Response(
-        JSON.stringify({ error: "Rate limit reached. Please try again shortly." }),
-        { status: 429, headers: { ...cors, "Content-Type": "application/json" } }
-      );
-    }
-
     const data = await r.json();
-    const text = data.content?.[0]?.text ?? "";
+    const text = data.choices?.[0]?.message?.content?.trim() ?? "Sorry, I could not generate a response.";
 
     return new Response(
       JSON.stringify({ text }),
       { headers: { ...cors, "Content-Type": "application/json" } }
     );
 
-  } catch (e) {
+  } catch (e: any) {
+    console.error("AI Interview Error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "unknown error" }),
+      JSON.stringify({ error: e.message || "Internal server error" }),
       { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }
