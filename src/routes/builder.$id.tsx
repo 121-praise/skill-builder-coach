@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ResumePreview, type ResumeData } from "@/components/app/ResumePreview";
 import { toast } from "sonner";
-import { Wand2, Sparkles, Plus, Trash2, Target, Download, Save } from "lucide-react";
+import { Wand2, Sparkles, Plus, Trash2, Download, Save } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -131,13 +131,11 @@ function Builder() {
           </div>
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" className="bg-transparent" onClick={save} disabled={!!busy}><Save className="w-4 h-4 mr-1"/>Save</Button>
-            {/* <Button variant="outline" className="bg-transparent" onClick={score} disabled={!!busy}><Target className="w-4 h-4 mr-1"/>{busy==="score"?"Scoring...":"Score"}</Button> */}
             <Button className="btn-hero border-0" onClick={downloadPdf} disabled={!!busy}><Download className="w-4 h-4 mr-1"/>{meta.paid?"Download PDF":"Pay & Download"}</Button>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Form */}
           <div className="space-y-6">
             <div className="glass rounded-2xl p-5">
               <h3 className="font-serif text-2xl mb-4">Target</h3>
@@ -229,7 +227,6 @@ function Builder() {
             )}
           </div>
 
-          {/* Preview */}
           <div className="lg:sticky lg:top-20 lg:self-start">
             <div className="text-xs text-muted-foreground mb-2">Live preview</div>
             <ResumePreview ref={previewRef} data={{ ...data, skills: skillsInput.split(",").map(s=>s.trim()).filter(Boolean) }} country={meta.country}/>
