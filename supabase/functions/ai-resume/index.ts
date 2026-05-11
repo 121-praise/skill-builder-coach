@@ -7,35 +7,39 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   try {
-    const { messages, resumeData, action } = await req.json();
+    const { mode, payload } = await req.json();
 
     const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
-    if (!GROQ_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "Missing GROQ_API_KEY" }),
-        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
-      );
-    }
+    if (!GROQ_API_KEY) throw new Error("Missing GROQ_API_KEY");
 
-    const systemPrompt = `You are an expert resume writer and career coach. Help users improve their resumes by:
-- Suggesting stronger action verbs and impactful phrasing
-- Improving clarity and conciseness
-- Tailoring content for specific roles
-- Improving ATS (Applicant Tracking System) compatibility
-- Highlighting key achievements and skills
+    if (!mode || !payload) throw new Error("Mode and payload are required");
 
-Be specific, practical, and constructive in your feedback. Keep responses concise and actionable.`;
+    let systemPrompt = "";
+    let userPrompt = "";
 
-    // Convert messages to Groq format
-    const groqMessages = (messages || []).filter((m: any) => m.role !== "system");
+    switch (mode) {
+      case "rewrite_summary":
+        systemPrompt = `You are an expert resume writer. Rewrite the professional summary to be powerful, concise, and impactful.`;
+        userPrompt = `Rewrite this summary for a ${payload.target_role} role in ${payload.country || "Nigeria"}:\n\n${payload.what_i_do}`;
+        break;
 
-    // If resume data is provided, include it as context
-    if (resumeData && groqMessages.length > 0) {
-      const lastMessage = groqMessages[groqMessages.length - 1];
-      groqMessages[groqMessages.length - 1] = {
-        ...lastMessage,
-        content: `Resume data:\n${JSON.stringify(resumeData, null, 2)}\n\nUser request: ${lastMessage.content}`,
-      };
+      case "rewrite_bullets":
+        systemPrompt = `You are an expert resume bullet point writer. Turn responsibilities into strong achievement statements using action verbs.`;
+        userPrompt = `Role: ${payload.role}\nTarget: ${payload.target_role}\n\nOriginal bullets:\n${payload.raw}`;
+        break;
+
+      case "suggest_skills":
+        systemPrompt = `You are a skills optimization expert for resumes.`;
+        userPrompt = `Suggest 12-18 relevant skills for a ${payload.target_role} role. Return only comma-separated skills.`;
+        break;
+
+      case "score":
+        systemPrompt = `You are an ATS resume scoring expert. Score the resume out of 100 and give brief strengths and improvements.`;
+        userPrompt = `Score this resume for ${payload.target_role} role:\n\n${JSON.stringify(payload.resume, null, 2)}`;
+        break;
+
+      default:
+        throw new Error("Unknown mode");
     }
 
     const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -45,33 +49,28 @@ Be specific, practical, and constructive in your feedback. Keep responses concis
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "mixtral-8x7b-32768",
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: groqMessages.length > 0 ? groqMessages : [
-          { role: "user", content: "Hello, I need help with my resume." }
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.7,
+        max_tokens: mode === "score" ? 800 : 1200,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
         ],
       }),
     });
 
-    if (r.status === 429) {
-      return new Response(
-        JSON.stringify({ error: "Rate limit reached. Please try again shortly." }),
-        { status: 429, headers: { ...cors, "Content-Type": "application/json" } }
-      );
-    }
-
     const data = await r.json();
-    const text = data.choices?.[0]?.message?.content ?? "";
+    const text = data.choices?.[0]?.message?.content?.trim() || "";
 
     return new Response(
       JSON.stringify({ text }),
       { headers: { ...cors, "Content-Type": "application/json" } }
     );
 
-  } catch (e) {
+  } catch (e: any) {
+    console.error(e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "unknown error" }),
+      JSON.stringify({ error: e.message || "Internal error" }),
       { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }
