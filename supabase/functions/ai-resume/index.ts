@@ -9,10 +9,10 @@ Deno.serve(async (req) => {
   try {
     const { messages, resumeData, action } = await req.json();
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) {
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    if (!GROQ_API_KEY) {
       return new Response(
-        JSON.stringify({ error: "Missing ANTHROPIC_API_KEY" }),
+        JSON.stringify({ error: "Missing GROQ_API_KEY" }),
         { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
@@ -26,30 +26,29 @@ Deno.serve(async (req) => {
 
 Be specific, practical, and constructive in your feedback. Keep responses concise and actionable.`;
 
-    // Convert messages to Anthropic format
-    const anthropicMessages = (messages || []).filter((m: any) => m.role !== "system");
+    // Convert messages to Groq format
+    const groqMessages = (messages || []).filter((m: any) => m.role !== "system");
 
     // If resume data is provided, include it as context
-    if (resumeData && anthropicMessages.length > 0) {
-      const lastMessage = anthropicMessages[anthropicMessages.length - 1];
-      anthropicMessages[anthropicMessages.length - 1] = {
+    if (resumeData && groqMessages.length > 0) {
+      const lastMessage = groqMessages[groqMessages.length - 1];
+      groqMessages[groqMessages.length - 1] = {
         ...lastMessage,
         content: `Resume data:\n${JSON.stringify(resumeData, null, 2)}\n\nUser request: ${lastMessage.content}`,
       };
     }
 
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
+    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "mixtral-8x7b-32768",
         max_tokens: 1000,
         system: systemPrompt,
-        messages: anthropicMessages.length > 0 ? anthropicMessages : [
+        messages: groqMessages.length > 0 ? groqMessages : [
           { role: "user", content: "Hello, I need help with my resume." }
         ],
       }),
@@ -63,7 +62,7 @@ Be specific, practical, and constructive in your feedback. Keep responses concis
     }
 
     const data = await r.json();
-    const text = data.content?.[0]?.text ?? "";
+    const text = data.choices?.[0]?.message?.content ?? "";
 
     return new Response(
       JSON.stringify({ text }),
