@@ -19,7 +19,7 @@ export function Nav() {
           {user ? (
             <>
               <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition">Dashboard</Link>
-              <Link to="/interview" className="text-sm text-muted-foreground hover:text-foreground transition hidden sm:inline">Interview</Link>
+              <Link to="/interview-soon" className="text-sm text-muted-foreground hover:text-foreground transition hidden sm:inline">Interview</Link>
               <Button size="sm" variant="ghost" onClick={async () => { await signOut(); navigate({ to: "/" }); }}>Sign out</Button>
             </>
           ) : (
