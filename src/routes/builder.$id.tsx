@@ -378,7 +378,7 @@ function Builder() {
         
        
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Form */}
+          {/* Form */
           /*
           <div className="space-y-6">
             <div className="glass rounded-2xl p-5">
@@ -471,7 +471,7 @@ function Builder() {
             )}
           </div>
 
-          {/* Preview */}
+          {/* Preview */
           /*
           <div className="lg:sticky lg:top-20 lg:self-start">
             <div className="text-xs text-muted-foreground mb-2">Live preview</div>
