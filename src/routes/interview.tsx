@@ -1,11 +1,41 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/interview")({
+  component: InterviewComingSoon,
+});
+
 export default function InterviewComingSoon() {
+  const navigate = useNavigate();
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: '24px' }}>
-      <h1>Mock Interview</h1>
-      <p style={{ fontSize: '18px', color: 'var(--color-text-secondary)' }}>Coming soon</p>
-      <a href="/dashboard" style={{ padding: '12px 24px', backgroundColor: 'var(--color-text-info)', color: 'white', borderRadius: '8px', textDecoration: 'none' }}>
-        Back to dashboard
-      </a>
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "100vh",
+      gap: "24px",
+      textAlign: "center",
+      padding: "24px",
+    }}>
+      <h1 style={{ fontSize: "32px", fontWeight: "500" }}>Mock Interview</h1>
+      <p style={{ fontSize: "18px", color: "var(--color-text-secondary)" }}>
+        This feature is coming soon. Stay tuned!
+      </p>
+      <button
+        onClick={() => navigate({ to: "/dashboard" })}
+        style={{
+          padding: "12px 24px",
+          backgroundColor: "var(--color-text-info)",
+          color: "white",
+          borderRadius: "8px",
+          border: "none",
+          cursor: "pointer",
+          fontSize: "16px",
+        }}
+      >
+        Back to Dashboard
+      </button>
     </div>
   );
 }
