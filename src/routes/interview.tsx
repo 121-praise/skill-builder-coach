@@ -14,22 +14,18 @@ export default function InterviewComingSoon() {
       alignItems: "center",
       justifyContent: "center",
       minHeight: "100vh",
-      gap: "24px",
-      textAlign: "center",
-      padding: "24px",
+      gap: "32px",
     }}>
-      <h1 style={{ fontSize: "32px", fontWeight: "500" }}>Mock Interview</h1>
-      <p style={{ fontSize: "18px", color: "var(--color-text-secondary)" }}>
-        This feature is coming soon. Stay tuned!
-      </p>
+      <h1>Mock Interview</h1>
+      <p>Coming soon</p>
       <button
         onClick={() => navigate({ to: "/dashboard" })}
         style={{
-          padding: "12px 24px",
-          backgroundColor: "var(--color-text-info)",
+          padding: "10px 20px",
+          background: "blue",
           color: "white",
-          borderRadius: "8px",
           border: "none",
+          borderRadius: "4px",
           cursor: "pointer",
           fontSize: "16px",
         }}
@@ -39,7 +35,6 @@ export default function InterviewComingSoon() {
     </div>
   );
 }
-
 /*import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
