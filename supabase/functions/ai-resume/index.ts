@@ -3,13 +3,19 @@ const cors = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   try {
     const { mode, payload } = await req.json();
 
-    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")?.trim();
     if (!GROQ_API_KEY) throw new Error("Missing GROQ_API_KEY");
 
     if (!mode || !payload) throw new Error("Mode and payload are required");
@@ -39,7 +45,7 @@ Deno.serve(async (req) => {
         break;
 
       default:
-        throw new Error("Unknown mode");
+        throw new Error(`Unknown mode: ${mode}`);
     }
 
     const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -54,24 +60,27 @@ Deno.serve(async (req) => {
         max_tokens: mode === "score" ? 800 : 1200,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
+          { role: "user", content: userPrompt },
         ],
       }),
     });
 
-    const data = await r.json();
-    const text = data.choices?.[0]?.message?.content?.trim() || "";
+    const data = await r.json().catch(() => null);
 
-    return new Response(
-      JSON.stringify({ text }),
-      { headers: { ...cors, "Content-Type": "application/json" } }
-    );
+    if (!r.ok) {
+      console.error("Groq error:", r.status, JSON.stringify(data));
+      throw new Error(data?.error?.message || `Groq request failed (${r.status})`);
+    }
 
+    const text = data?.choices?.[0]?.message?.content?.trim();
+    if (!text) {
+      console.error("Empty Groq response:", JSON.stringify(data));
+      throw new Error("Groq returned an empty response");
+    }
+
+    return json({ text });
   } catch (e: any) {
     console.error(e);
-    return new Response(
-      JSON.stringify({ error: e.message || "Internal error" }),
-      { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
-    );
+    return json({ error: e.message || "Internal error" }, 500);
   }
 });
